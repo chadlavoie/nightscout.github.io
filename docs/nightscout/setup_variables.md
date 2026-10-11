@@ -909,7 +909,7 @@ The connector supports newer G7-era account responses as well as older Dexcom Sh
 
 ```{admonition} Numeric credentials
 :class: warning
-A username or password made only of digits (a phone number, a password with leading zeros) is converted to a number by Nightscout and the login fails. See [here](/troubleshoot/dexcom_bridge.md#username-is-a-phone-number).
+Nightscout 15.0.8 converts numeric-looking credentials to numbers, including phone-number usernames beginning with `+`. It also converts credentials such as `on` or `false` to booleans. These values must remain strings for Dexcom login. Quoting your deployment variables does not prevent this application parsing bug. See [details and workarounds](/troubleshoot/dexcom_bridge.md#username-is-a-phone-number).
 ```
 
 If your site still uses the deprecated `bridge` plugin, follow the [migration steps](/troubleshoot/dexcom_bridge.md#bridge-to-connect).

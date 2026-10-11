@@ -23,7 +23,7 @@ In the case you have linked accounts, check you are using the right credentials 
 
 ```{admonition} Password
 :class: tip
-Some people have had problems with their bridge connecting when their Dexcom passwords are entirely numeric. If you have connection issues in that case, try changing your password to something with a mix of numbers and letters.
+Nightscout's credential parsing bug can alter entirely numeric passwords before they reach Dexcom. Until your deployed version includes the fix, use a password with a mix of numbers and letters. See [the explanation below](#username-is-a-phone-number).
 ```
 
 ```{admonition} Changing password
@@ -50,7 +50,11 @@ Common symptoms are:
 
 ## Username is a phone number
 
-New users might have the phone app setup with their phone number including country code and the symbol `+`. This is not supported by Nightscout. Continue below and create a dependent account with an alphanumerical username.
+Some Dexcom accounts use a phone number as the username, including the country code and the leading `+`. Enter the complete username in `CONNECT_SHARE_ACCOUNT_NAME` (or `BRIDGE_USER_NAME` for the deprecated bridge).
+
+Nightscout 15.0.8 has a configuration parsing bug: it converts numeric-looking credentials to numbers before sending them to Dexcom. For example, `+15555550123` becomes `15555550123`, losing both the leading `+` and its string type. Numeric passwords also lose their string type and any leading zeros. The same parser converts credentials such as `on` or `false` to booleans. This affects both Connect and the legacy bridge; switching between them does not avoid it. Quoting the value in your deployment configuration does not prevent Nightscout's conversion.
+
+The application fix is to preserve `CONNECT_SHARE_ACCOUNT_NAME`, `CONNECT_SHARE_PASSWORD`, `BRIDGE_USER_NAME`, and `BRIDGE_PASSWORD` as strings. Until your deployed version includes that fix, an alphanumeric username and a password that does not resemble a number or boolean avoid the bug. If needed, see the dependent-account instructions below.
 
 </br>
 
