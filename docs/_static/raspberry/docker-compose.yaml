@@ -87,6 +87,9 @@ services:
 # Do not change anything below unless you know what you are doing
 # -----------------------------------------------------------------------------------------------
       INSECURE_USE_HTTP: 'true'
+      # Nightscout 15.0.9 and later: trust the Cloudflare Tunnel for the visitor's address.
+      # Set it to 'false' if you only reach Nightscout directly on your local network.
+      TRUST_PROXY: '1'
       NIGHTSCOUT_HOSTNAME: '0.0.0.0'
       MONGO_CONNECTION: mongodb://mongo:27017/Nightscout
     ports:

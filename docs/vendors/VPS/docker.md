@@ -257,6 +257,7 @@ x-ns-common-env: &ns-common-env
   TZ: Europe/Moscow
   TIME_FORMAT: 24
   INSECURE_USE_HTTP: 'true'
+  TRUST_PROXY: '1'
   NIGHTSCOUT_HOSTNAME: '0.0.0.0'
   ENABLE: basal iob cob boluscalc cage sage iage bage pump openaps pushover food rawbg
   SHOW_FORECAST: openaps

@@ -142,6 +142,10 @@ Triggering a remote override with IFTTT takes a couple considerations;</br></br>
 
 Now that we have cool applets made, we need to give Nightscout some information so that it will accept commands from our applets. It's pretty simple to do...just a couple additions to your Heroku settings.
 
+```{note}
+The applets above send commands **to** Nightscout. Nightscout can also send its alarms **to** IFTTT (the `maker` plugin, see the [event list](https://github.com/nightscout/cgm-remote-monitor/blob/master/docs/plugins/maker-setup.md)). Since Nightscout 15.0.9, those events use the untranslated (English) names on every site language: `ns-info`, `ns-warning`, `ns-urgent`, `ns-urgent-low`, ... If you had renamed your triggers to translated names on a non-English site, give them their original names back.
+```
+
 * Find your Maker Key by going to your IFTTT account icon in upper right corner, choose "My services" and then click on the Webhooks service, settings.
 
 ********

@@ -22,11 +22,13 @@ You will see several predefined roles:
 
 ### Roles
 
-- **`admin`**: full access
+- **`admin`**: full access. Since Nightscout 15.0.9, it is also the only built-in role allowed to silence (acknowledge) an alarm with a token (`notifications:*:ack` permission).
 - **`careportal`**: can view the site and make CarePortal/treatment entries
 - **`readable`**: read-only access; no ability to make CarePortal/treatment entries. This user CAN see reports and profile information.
 - **`denied`**: no access (this role only works if the `AUTH_DEFAULT_ROLES` setting is also `denied`. You can’t have a site that is readable to everyone and create a “denied” token for a specific user.)
 - **`devicestatus-upload`**: used by devices
+
+Since Nightscout 15.0.9, the live-update (websocket) connection used by the web page checks the same read permission as the API. With `AUTH_DEFAULT_ROLES` set to `denied`, a page opened without a token no longer receives data, alarms or notifications. Sites with the default `readable` role are not affected.
 
 ```{hint}
 There is currently no way to limit a user so that he cannot view the Reports section if he has access to the site. Time/date-based roles are not currently possible.
@@ -73,6 +75,11 @@ If the user copies only your core URL into a browser, and your site is readable 
 
 - You can edit a subject by clicking the edit icon, making changes, and saving.
 - You can delete a subject by clicking the red **`X`** icon to remove the subject from the list.
+
+```{admonition} Updating from Nightscout 15.0.8 or earlier
+:class: warning
+Before 15.0.9, editing a subject stored a readable copy of its access token in the database. Those copies stay there until the token is rotated. After updating, delete and recreate the subjects whose tokens matter (and update the apps or links that use them). The same applies if you edited subjects while on an earlier release.
+```
 
 See [how to setup your downloaders (followers)](/nightscout/downloaders) with a secured site.
 

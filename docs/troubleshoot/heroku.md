@@ -71,9 +71,10 @@ npm error Fetching packages of type "remote" have been disabled
 npm error Refusing to fetch "nightscout-connect@https://github.com/nightscout/nightscout-connect/archive/refs/tags/v0.0.13.tar.gz"
 ```
 
-Heroku now installs npm 12, which refuses by default to download dependencies from a URL instead of the npm registry. One of Nightscout's dependencies (`nightscout-connect`) is fetched from GitHub, so the build is rejected. A permanent fix is [merged](https://github.com/nightscout/cgm-remote-monitor/pull/8601) and will be included in the next Nightscout release.
+Heroku now installs npm 12, which refuses by default to download dependencies from a URL instead of the npm registry. In 15.0.8, one of Nightscout's dependencies (`nightscout-connect`) is fetched from GitHub, so the build is rejected. This is [fixed](https://github.com/nightscout/cgm-remote-monitor/pull/8601) in Nightscout 15.0.9, which deploys with npm 12 without any change.
 
-- In the meantime, open your app in Heroku, select `Settings`, `Reveal Config Vars` and add a new variable with key `NPM_CONFIG_ALLOW_REMOTE` and value `root`.
+- [Update](/update/update/) your site to Nightscout 15.0.9 or later.
+- If you need to stay on 15.0.8, open your app in Heroku, select `Settings`, `Reveal Config Vars` and add a new variable with key `NPM_CONFIG_ALLOW_REMOTE` and value `root`. You can remove it once you've updated to 15.0.9.
 - Then redeploy your app from the `Deploy` tab. Restarting the dynos is not enough: the failed build must be run again. See [this report](https://github.com/nightscout/cgm-remote-monitor/issues/8600) for details.
 
 </br>

@@ -115,6 +115,24 @@ Once done, issues are most probably due to your `fly.toml` contents or variables
 
 ## Other issues
 
+### Known issues in Nightscout 15.0.9
+
+The [15.0.9 release notes](https://github.com/nightscout/cgm-remote-monitor/releases/tag/v15.0.9) list these limitations. They are not configuration errors.
+
+- A treatment deleted through API v1 or the websocket (the careportal, Loop, Trio, xDrip+) does not reach AAPS.
+- Two careportal entries in the same minute with the same amount are stored as one. So are an AAPS bolus and carbs recorded in the same millisecond as `Meal Bolus`.
+- After AAPS takes over a v1 record at the same time and event type, a later re-send of the v1 entry can be stored again.
+- A page with no current glucose reading does not present server alarms, including device alarms (cannula, sensor, battery, pump).
+- An uploader whose clock runs ahead delays the stale-data warning by about the size of the error.
+- An alarm threshold entered in mmol/L on a site that is not set to mmol/L is read as mg/dl, so a low threshold like `3.9` never fires. See [BG thresholds](/nightscout/setup_variables.md#alarms).
+- The Bolus Wizard and the Bolus Wizard Preview use the profile's sensitivity and targets without unit conversion: keep the profile and the display in the same units. See [`boluscalc`](/nightscout/setup_variables.md#boluscalc-bolus-wizard).
+- The careportal can prefill `Entered By` with `undefined`.
+- During an AAPS percentage profile switch, the basal pill shows ISF and carb ratio unrounded.
+- For about a minute after a new phone or a reinstalled Loop uploads its settings, a remote command can still be sent to the old device.
+- While `TRUST_PROXY` is unset, the failed-login delay can be avoided by supplying a forwarded address. See [`TRUST_PROXY`](/nightscout/setup_variables.md#trust_proxy-empty).
+
+</br>
+
 ### Reports
 
 [Reports slow loading or timeout](/troubleshoot/atlas.md#reports-slow-loading-or-timeout)
@@ -134,7 +152,7 @@ See [this dedicated page](/troubleshoot/dexcom_bridge/).
 ### Dexcom or CareLink data stopping after a while
 
 ```{hint}
-CareLink with mmconnect data source stopped functioning for 7xx pumps.
+CareLink with mmconnect data source stopped functioning for 7xx pumps. The `mmconnect` plugin is deprecated and will be removed in a later release.
 **Remove the `mmconnect` plugin from `ENABLE`. 
 ```
 

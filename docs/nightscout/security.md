@@ -98,13 +98,17 @@ If you have apps running that use the Nightscout REST API, check you have the co
 
 If the message keeps appearing unexpectedly or is reported against multiple IP numbers, it's possible someone is trying to brute force attack your installation and guess your API_SECRET to be able to modify data in your Nightscout. In this situation, we highly recommend you rename the Nightscout site to change it's address and pick a name that's hard to guess.
 
+Since Nightscout 15.0.9, failed logins are delayed per address and per credential. If your site is behind a proxy (Heroku, Docker with Traefik or nginx, Cloudflare...) and the message always reports the proxy's address, or if the server log shows a `SECURITY:` warning about `TRUST_PROXY` at startup, set [`TRUST_PROXY`](/nightscout/setup_variables.md#trust_proxy-empty) so that Nightscout counts the real visitor's address.
+
 </br>
 
 ### I'm seeing a message Nightscout is readable by the world
 
 <img src="/nightscout/img/Security05.png" width="300px" />
 
-This means the site shows the CGM data to users who can guess the site address without authentication. Note Nightscout never allows data to be saved or edited without authentication, so this is not necessarily a problem depending on how hard your site address is to guess and how you want the information to be shared.
+This means the site shows the CGM data to users who can guess the site address without authentication. Nightscout does not allow data to be saved or edited without authentication (unless you have set `TREATMENTS_AUTH` to `off`), so this is not necessarily a problem depending on how hard your site address is to guess and how you want the information to be shared.
+
+Since Nightscout 15.0.9, this message also appears when your role settings or `TREATMENTS_AUTH=off` make data readable or editable without login, even if `AUTH_DEFAULT_ROLES` is not `readable`.
 
 If you want to have the site require authentication, read the "How to Turn Off Unauthorized Access" section below.
 
@@ -133,6 +137,8 @@ To Take Advantage of Roles, Turn Off Unauthorized Access to Your Site:
 If you want to ensure that ONLY someone with permission to view your site (e.g., a token) is able to view the data, you should configure the [`AUTH_DEFAULT_ROLES`](auth_default_roles) variable. Set the value as: `denied`.
 
 Edit (or add) this variable and set it to `denied` (see [here](/nightscout/setup_variables.md#nightscout-configuration) how to edit variables).
+
+Since Nightscout 15.0.9, `denied` also covers the live-update (websocket) connection used by the web page: a page opened without a token no longer receives data, alarms or notifications. Before 15.0.9, update your site to close this gap.
 
 <img src="/nightscout/img/Admin03.png" width="600px" />
 

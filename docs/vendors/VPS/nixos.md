@@ -7,7 +7,7 @@ etc.) that can run NixOS.
 ## Table of contents
 
 1. [Install and configure MongoDB](#install-and-configure-mongodb)
-2. [Run Nightscout 15.0.8](#run-nightscout-1508)
+2. [Run Nightscout 15.0.9](#run-nightscout-1509)
 3. [Legacy native build example](#legacy-native-build-example)
 4. [Run Nightscout with Systemd](#run-nightscout-with-systemd)
 5. [Configure Nginx as an entry point](#configure-nginx-as-an-entry-point)
@@ -58,15 +58,15 @@ nightscout> db.createUser(
 )
 ```
 
-## Run Nightscout 15.0.8
+## Run Nightscout 15.0.9
 
-The recommended documented way to run Nightscout 15.0.8 on NixOS is the official multi-architecture container image. Enable Docker in your NixOS configuration:
+The recommended documented way to run Nightscout 15.0.9 on NixOS is the official multi-architecture container image. Enable Docker in your NixOS configuration:
 
 ```nix
 virtualisation.docker.enable = true;
 ```
 
-Apply the NixOS configuration, then follow the [Docker deployment guidance](/vendors/VPS/docker/), beginning with the Nightscout configuration steps after Docker is installed. Pin `nightscout/cgm-remote-monitor:15.0.8` if you want to remain on this release. The image is published for both `amd64` and `arm64` Linux.
+Apply the NixOS configuration, then follow the [Docker deployment guidance](/vendors/VPS/docker/), beginning with the Nightscout configuration steps after Docker is installed. Pin `nightscout/cgm-remote-monitor:15.0.9` if you want to remain on this release. The image is published for both `amd64` and `arm64` Linux.
 
 Use the documented Docker secret configuration to mount the API-secret file read-only and set `API_SECRET_FILE` inside the container. Keep the source file outside the repository and Nix store. Do not define secret text directly in a Nix expression because evaluated values can be copied into the world-readable Nix store.
 
@@ -75,7 +75,7 @@ Use the documented Docker secret configuration to mount the API-secret file read
 The historical native setup used [`buildNpmPackage`][2] and passed the Node.js package as an argument.
 
 ```{warning}
-The native Nix expression below is a historical example pinned to Nightscout 15.0.3; it is not the current Nightscout release and is not validated against current Nixpkgs. Nightscout 15.0.8's published npm lockfile omits registry metadata required by Nix's offline `fetchNpmDeps` build, so changing only the version and hashes does not produce a working native build. Use the 15.0.8 container method above for a current installation.
+The native Nix expression below is a historical example pinned to Nightscout 15.0.3; it is not the current Nightscout release and is not validated against current Nixpkgs. Nightscout 15.0.8's published npm lockfile omits registry metadata required by Nix's offline `fetchNpmDeps` build, so changing only the version and hashes does not produce a working native build. Use the container method above for a current installation.
 ```
 
 *nightscout.nix:*
@@ -252,6 +252,8 @@ in {
 
       TIME_FORMAT = "24";
       INSECURE_USE_HTTP = "true";
+      # Nightscout 15.0.9 and later: trust the Nginx reverse proxy below for the visitor's address
+      TRUST_PROXY = "1";
       THEME = "colors";
 
       ## Dexcom Share ##################################################
@@ -275,6 +277,8 @@ in {
     virtualHosts."${dnsName}" = {
       locations."/".extraConfig = ''
         proxy_pass http://localhost:${toString nightscoutPort};
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
       '';
     };
   };
