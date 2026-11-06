@@ -191,7 +191,7 @@ d) Install Node.js and npm.
 
 **Mind some small VPS will not be powerful enough to deploy with npm, consider using a [Docker container](/vendors/VPS/docker) in this case.**
 
-Nightscout 15.0.8 requires Node.js 20 or newer and npm 10 or newer. Node.js 22 is the recommended baseline and includes a compatible npm version.
+Nightscout 15.0.8 and later require Node.js 20 or newer and npm 10 or newer. Nightscout 15.0.9 is tested with Node.js 20, 22 and 24, and works with npm 12. Node.js 22 is the recommended baseline and includes a compatible npm version.
 
 ```bash
 sudo apt install -y build-essential curl
@@ -331,9 +331,12 @@ server {
 		proxy_set_header Host $host;
 		proxy_cache_bypass $http_upgrade;
 		proxy_set_header X-Forwarded-Proto "https";
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 	}
 }
 ```
+
+Since Nightscout 15.0.9, add `TRUST_PROXY="1"` to `my.env` so that Nightscout takes the visitor's address from nginx (the `X-Forwarded-For` line above) instead of from headers any visitor can set, then restart Nightscout with `pm2 restart server`. See [`TRUST_PROXY`](/nightscout/setup_variables.md#trust_proxy-empty).
 
 Your Nightscout site is now available at `http://MY_FULLYQUALIFIEDNAME` but it's not secured so most browsers will refuse it.
 

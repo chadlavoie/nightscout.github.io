@@ -159,6 +159,45 @@ Since 15.0.7, the size of the MongoDB connection pool can be tuned. Most install
 
 Nightscout accepts either one document or an array of documents on several legacy API write endpoints. In 15.0.8, array writes to the `entries`, `devicestatus`, `activity`, and `food` endpoints are limited to **10,000 documents per request** so that validation and database work remain bounded. Clients uploading larger backfills to these endpoints must divide them into smaller batches. Other endpoints have their own accepted payload shapes and limits; consult the API documentation exposed by your Nightscout instance.
 
+(trust-proxy)=
+
+#### `TRUST_PROXY` (empty)
+
+Since Nightscout 15.0.9, `TRUST_PROXY` controls which proxies Nightscout believes when it works out a visitor's address from the `X-Forwarded-For` and similar headers. That address is used by the failed-login delay (which protects your `API_SECRET` against guessing) and is recorded with Loop remote commands. Possible values:
+
+- empty or not set - keeps the 15.0.8 behaviour: the address comes from headers any caller can set, so the failed-login delay does not protect against guessing. Nightscout logs a `SECURITY:` warning at startup.
+- `false` - ignore all forwarded headers. Use it when nothing sits in front of Nightscout (Nightscout serves HTTPS itself, or plain HTTP on a home network). Behind a proxy that terminates HTTPS, `false` causes an endless https redirect loop: remove the setting to undo it.
+- a whole number, like `1` - trust that many proxies between the visitor and Nightscout. `1` fits one proxy on the same host or Docker network (nginx, Apache, Caddy, Traefik, HAProxy, the Synology reverse proxy, the [`docker-compose.yml`](/vendors/VPS/docker.md) from this documentation), Heroku, a Cloudflare Tunnel straight to Nightscout and Kubernetes ingress-nginx. Use `2` for Cloudflare in front of a local proxy.
+- `true` - trust every hop. Not recommended: any caller can then supply an address.
+- comma-separated IP addresses or CIDRs - trust only these proxies. Works when the proxy's address is fixed.
+
+An invalid value prevents Nightscout from starting; remove the variable to undo any value. With nginx, the proxy must add the visitor to the header (`proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`, see the [Ubuntu guide](/vendors/VPS/ubuntu.md#step-5---open-and-secure-your-access)). For Railway, Fly.io, Render, Northflank and Azure, the number of proxies is not documented by the platform: start with `1` and verify with the [upstream proxy guide](https://github.com/nightscout/cgm-remote-monitor/blob/master/docs/proposals/trusted-proxy-migration.md), which lists every deployment measured and how to check the result. On a managed Nightscout service (T1Pal, NS10BE, ...) you don't control the proxy: ask your provider.
+
+#### API v1 `count` compatibility
+
+Two settings, new in Nightscout 15.0.9, keep older client request shapes working while they are phased out. Both default to `true` and the default is expected to become `false` in a future release. Replies that use them carry `Deprecation: true` and `Warning` headers.
+
+- `API_V1_COUNT_LEADING_NUMBER` (`true`) - On API v1 reads, a `count` that is a whole number followed by `?` and other text (like `1?token=...`, which OpenAPS oref0 sends) is read as that number. Set to `false` to refuse it with `400 Bad count`, like any other malformed count.
+- `API_V1_COUNT_ZERO_WINDOW` (`true`) - On API v1 reads, `count=0` together with a `find` that bounds one date field from both sides returns every record in that range, as 15.0.8 did (GluPredKit asks this way). Without such a range it returns the endpoint's default number of records instead of the whole history. Set to `false` to answer every read with `count=0` with an empty list.
+
+Malformed counts, and a DELETE with `count=0`, get HTTP 400 and nothing is deleted. Saves and updates ignore `count`.
+
+(api-v3-settings)=
+
+#### API v3 settings
+
+These settings control API v3 (`/api/v3`), used by AAPS among others. API v3 reads them straight from the environment when Nightscout starts, so they do not appear in `/api/v1/status`: restart Nightscout after changing one. Most installations should leave them unset.
+
+- `API3_SECURITY_ENABLE` (`true`) - Every API v3 request must carry a valid access token and is allowed only what that token's roles allow. Only `false` or `off` turns this off. **Do not turn it off on a site that holds real data:** with it off, anyone who can reach your site can read, change and delete every record through API v3. It exists for development and testing.
+- `API3_MAX_LIMIT` (`1000`) - The number of records an API v3 search or history request returns when the client does not ask for a number, and the most a client may ask for; a request for more is refused with `400`.
+- `API3_DEDUP_FALLBACK_ENABLED` (`true`) - When a record is created through API v3, Nightscout first looks for a stored record with the same `identifier` and updates it instead of adding a duplicate. With this on, it also treats as a duplicate a stored record without `identifier` that has the same time (and device or event type) fields. Records written by API v1 clients usually have no `identifier`, so this is what stops an API v3 upload from repeating them.
+- `API3_CREATED_AT_FALLBACK_ENABLED` (`true`) - A record created or replaced through API v3 gets its time from `date` or, if `date` is missing or invalid, from `created_at`, and `created_at` is written next to `date` so that clients which read `created_at` keep working.
+- `API3_AUTOPRUNE_DEVICESTATUS`, `API3_AUTOPRUNE_ENTRIES`, `API3_AUTOPRUNE_FOOD`, `API3_AUTOPRUNE_PROFILE`, `API3_AUTOPRUNE_SETTINGS`, `API3_AUTOPRUNE_TREATMENTS` (not set: nothing is deleted) - **Permanently deletes** records older than this many days (for example `90`) from that one collection.
+
+```{warning}
+`API3_AUTOPRUNE_*` deletes every record in the collection whose `srvCreated`, `created_at` or `date` is older than the set number of days, however it was uploaded (API v1 or v3), including a profile that is still in use. There is no timer: it runs after a successful API v3 write to that collection, at most once an hour, and deleted records cannot be recovered. In Nightscout 15.0.9 a failed prune stops the server. Make your own [backup](/nightscout/admin_tools.md#database-maintenance) first, or delete records under control with the [Admin Tools](/nightscout/admin_tools.md#delete-records-by-date-range).
+```
+
 (debug-logging)=
 
 #### `DEBUG_LOGGING` (`false`)
@@ -243,6 +282,8 @@ For example this will disable the direction arrow and uploader battery informati
 
 Possible values `readable`, `denied`, or any valid role name. When `readable`, anyone can view Nightscout without a token. Setting it to `denied` will require a token from every visit, using `status-only` will enable api-secret based login.
 
+Since Nightscout 15.0.9, the live-update (websocket) connection used by the web page checks the same read permission as the API: with `denied`, a page opened without a token no longer receives data, alarms or notifications. Sites using the default `readable` role are not affected. API v3 is not affected by this variable: it asks for a token on every request (see [API v3 settings](#api-v3-settings)).
+
 More information on how to setup tokens [here](/nightscout/security.md#create-authentication-tokens-for-users).
 
 </br>
@@ -267,6 +308,12 @@ Predict alarms uses highly tuned formula that forecasts where the BG is going ba
 ```{admonition} BG Thresholds
 :class: hint
 These values are the ones that will trigger `simple` alarms. They are expressed in the unit you selected with `DISPLAY_UNITS`.
+```
+
+Since Nightscout 15.0.9, on a `DISPLAY_UNITS=mmol` site each of the four `BG_` thresholds is read on its own: a value below 30 is taken as mmol/L and converted, and a value of 30 or more (including the defaults, for any you leave unset) is taken as mg/dl. So you can set only some of them in mmol/L. The server log shows one line for each threshold it converts. Before 15.0.9, low alarms did not fire on sites where only some thresholds were set in mmol/L.
+
+```{warning}
+On a site that is **not** set to mmol/L, a threshold entered in mmol/L (like `3.9`) is read as mg/dl, so a low alarm will never fire. An out-of-range high threshold is replaced by the default, and only the server log says so. Use mg/dl values on a mg/dl site.
 ```
 
 #### `BG_HIGH`
@@ -733,6 +780,10 @@ Care Portal is an important plugin that gives access to the `Log a treatment` in
 
 Bolus Wizard plugin gives access to the `Bolus Wizard` interface. You can access it with the calculator icon top right. 
 
+```{warning}
+Up to and including Nightscout 15.0.9, the Bolus Wizard and the [Bolus Wizard Preview](#bwp-bolus-wizard-preview) use the profile's sensitivity and targets without unit conversion: if your profile units differ from `DISPLAY_UNITS`, their estimate and warnings are off by a factor of about 18. Keep the profile and the display in the same units. In 15.0.9 the Bolus Wizard profile picker also saves the chosen profile's name with the active profile's values.
+```
+
 <img src="/nightscout/img/SetupNS16.png" width="600px" />
 
 </br>
@@ -788,6 +839,10 @@ This plugin in intended for the purpose of automatically snoozing alarms when th
 - `BWP_SNOOZE_MINS` (`10`) - minutes to snooze when there is enough IOB to cover a high BG.
 - `BWP_SNOOZE` - (`0.10`) If BG is higher then the `target_high` and `BWP` < `BWP_SNOOZE` alarms will be snoozed for `BWP_SNOOZE_MINS`.
 
+```{warning}
+Up to and including Nightscout 15.0.9, the Bolus Wizard Preview uses the profile's sensitivity and targets without unit conversion: if your profile units differ from `DISPLAY_UNITS`, its estimate and warnings are off by a factor of about 18. Keep the profile and the display in the same units.
+```
+
 <img src="/nightscout/img/SetupNS19.png" width="400px" />
 
 </br>
@@ -824,7 +879,7 @@ Calculates the number of days and hours since the last `Insulin Change` treatmen
 - `IAGE_ENABLE_ALERTS` (`false`) - Set to `true` to enable notifications to remind you of upcoming insulin reservoir change.
 - `IAGE_INFO` (`44`) - If time since last `Insulin Change` matches `IAGE_INFO`, user will be warned of upcoming insulin reservoir change
 - `IAGE_WARN` (`48`) - If time since last `Insulin Change` matches `IAGE_WARN`, user will be alarmed to to change the insulin reservoir
-- `IAGE_URGENT` (`72`) - If time since last `Insulin Change` matches `IAGE_URGENT`, user will be issued a persistent warning of overdue change.
+- `IAGE_URGENT` (`72`) - Marks the insulin age as urgent at and beyond this many hours since the last `Insulin Change`. With `IAGE_ENABLE_ALERTS` enabled, a one-time "Insulin reservoir change overdue!" notification is sent during the first 20 minutes of the threshold hour. Starting or upgrading Nightscout after that window does not issue a catch-up notification; the urgent indicator remains until the insulin age resets. Before Nightscout 15.0.9 the urgent level could never be reached and the pill stayed at the warning level.
 
 #### `bage` (Battery Age)
 
@@ -973,7 +1028,7 @@ LibreLinkUp writes graph readings and the current glucose item so that the newes
 #### `bridge` (Share2Nightscout bridge)
 
 ```{warning}
-**Deprecated**: please consider using the [`connect`](#connect-nightscout-connect) plugin with the Dexcom Share source instead. The legacy `share2nightscout-bridge` implementation will be retired in a future release. See the [migration steps](/troubleshoot/dexcom_bridge.md#bridge-to-connect).
+**Deprecated**: please consider using the [`connect`](#connect-nightscout-connect) plugin with the Dexcom Share source instead. The legacy `share2nightscout-bridge` implementation (`BRIDGE_*` settings with `DEXCOM_BRIDGE_USE_LEGACY`) will be removed in a later release: the 15.0.9 release notes list it, with the legacy MiniMed `MMCONNECT_*` connection, as deprecated. See the [migration steps](/troubleshoot/dexcom_bridge.md#bridge-to-connect).
 ```
 
 Dexcom Share glucose retrieval configured with the established `BRIDGE_*` variables. In Nightscout 15.0.8 and later, `BRIDGE_USER_NAME`, `BRIDGE_PASSWORD` and `BRIDGE_SERVER` are handed over to the newer `nightscout-connect` Dexcom Share implementation by default for improved compatibility. The variable names remain the same and `bridge` stays in `ENABLE`: you don't need to add `connect`. Nightscout Connect manages its own polling and retries, so the other `BRIDGE_*` variables below only apply to the legacy implementation.
@@ -1003,7 +1058,7 @@ Legacy implementation only (`DEXCOM_BRIDGE_USE_LEGACY=true`):
 #### `mmconnect` (MiniMed Connect bridge)
 
 ```{warning}
-This plugin is **deprecated and not functional**. Do not enable it.
+**Deprecated**: the built-in legacy MiniMed Connect bridge (`MMCONNECT_*` settings) is **not functional** with current CareLink and will be removed in a later release. The built-in [`connect`](#connect-nightscout-connect) plugin with the [MiniMed CareLink](#minimed-carelink) source (`CONNECT_*` settings) replaces it. Since Nightscout 15.0.9, the deprecation warning in the logs names the `CONNECT_` settings to use instead of `MMCONNECT_`. Do not enable `mmconnect`.
 ```
 
 </br>
@@ -1018,7 +1073,7 @@ Generic Pump Monitoring for OpenAPS, MiniMed Connect, RileyLink, t:slim, ...
 
 - Requires `DEVICESTATUS_ADVANCED="true"` to be set
 - `PUMP_ENABLE_ALERTS` (`false`) - Set to `true` to enable notifications for Pump battery and reservoir.
-- `PUMP_WARN_ON_SUSPEND` (`false`) - Set to `true` to get an alarm when the pump is suspended.
+- `PUMP_WARN_ON_SUSPEND` (`false`) - Set to `true` to get a `Pump Suspended` warning while the pump is suspended; the pump pill takes the warning colour. Before Nightscout 15.0.9 this setting had no effect.
 - `PUMP_FIELDS` (`reservoir battery`) - The fields to display by default. Any of the following fields: `reservoir`, `battery`, `clock`, `status`, and `device`
 - `PUMP_RETRO_FIELDS` (`reservoir battery clock`) - The fields to display in retro mode. Any of the above fields.
 - `PUMP_WARN_CLOCK` (`30`) - The number of minutes ago that needs to be exceed before an alert is triggered.
@@ -1110,11 +1165,15 @@ Integrated xDrip-js monitoring, uses these extended settings:
 
 Integration with Amazon Alexa, [detailed setup instructions](https://github.com/nightscout/cgm-remote-monitor/blob/master/docs/plugins/alexa-plugin.md)
 
+Since Nightscout 15.0.9, a voice request no longer changes the language of the rest of the server: the request's locale is ignored.
+
 </br>
 
 #### `googlehome` (Google Home/DialogFlow)
 
 Integration with Google Home (via DialogFlow), [detailed setup instructions](https://github.com/nightscout/cgm-remote-monitor/blob/master/docs/plugins/googlehome-plugin.md)
+
+Since Nightscout 15.0.9, a voice request no longer changes the language of the rest of the server: the request's locale is ignored.
 
 </br>
 
@@ -1185,6 +1244,10 @@ With Maker you are able to integrate with all the other [IFTTT Services](https:/
 
 1. Setup IFTTT account: [login](https://ifttt.com/login) or [create an account](https://ifttt.com/join)
 2. Follow the [Detailed IFTTT setup Instructions](https://github.com/nightscout/cgm-remote-monitor/blob/master/docs/plugins/maker-setup.md)
+
+```{note}
+Since Nightscout 15.0.9, the events sent to IFTTT use the untranslated (English) names on every site language: `ns-info`, `ns-warning`, `ns-urgent`, `ns-urgent-low`, ... If you had renamed your applets' triggers to translated names on a non-English site, give them their original names back.
+```
 3. Configure Nightscout by setting these webpage environment variables:
 
 - `ENABLE` - `maker` should be added to the list of plugins, for example: `ENABLE="maker"`.

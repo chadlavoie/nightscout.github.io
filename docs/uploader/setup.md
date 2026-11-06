@@ -114,7 +114,7 @@ The most common error on initial Nightscout setups is that people incorrectly us
 ## Medtronic CareLink
 
 ```{warning}
-The `mmconnect` plugin is **NOT** functional anymore.
+**Deprecated**: the `mmconnect` plugin is **NOT** functional anymore and will be removed in a later release. The `connect` plugin with the [MiniMed CareLink source](/nightscout/setup_variables.md#minimed-carelink) (`CONNECT_SOURCE=minimedcarelink`) replaces it.
 ```
 
 You can use an Android phone with xDrip. See [**here**](../../uploader/xdripcarelink) how to set it up. You can use [Guardian Monitor](https://apps.apple.com/us/app/guardian-monitor/id1546989938) with iOS.
@@ -131,7 +131,7 @@ You can use an Android phone with xDrip. See [**here**](../../uploader/xdripcare
 
 :::{tab-item} 14 and previous
 **THE `mmconnect` PLUGIN IS NOT FUNCTIONAL ANYMORE.**</br></br>
-**The `mmconnect` plugin requires obsolete libraries and will be removed from future Nightscout versions with Node above 16.**</br></br>
+**The `mmconnect` plugin is deprecated and will be removed in a later Nightscout release.**</br></br>
 Verify, update or add these variables:</br></br>
 `CARELINK_USER_NAME`</br>
 `CARELINK_PASSWORD`</br>

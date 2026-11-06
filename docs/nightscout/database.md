@@ -37,7 +37,7 @@ Find a list of commonly used database hosting services below, decide which one y
 
 ```{admonition} MongoDB version
 :class: important
-Nightscout 15.0.8 and later require **MongoDB 5.0 or later** (5.0.32+ or 6.0.27+ recommended). MongoDB 4.4 and older are no longer supported: Nightscout 15.0.7 is the last version that works with MongoDB 4.4. The hosted databases listed below provide a supported version. If you run your own MongoDB server, check its version before updating Nightscout.
+Nightscout 15.0.8 and later are supported with **MongoDB 5.0 or later** (5.0.32+ or 6.0.27+ recommended). MongoDB 4.4 is **deprecated**: Nightscout 15.0.9 still runs on it, but support for it will be removed in a future release, and MongoDB itself stopped supporting 4.4 in February 2024. Plan to upgrade one major version at a time (4.4 to 5.0, then 6.0). Older versions than 4.4 are not supported. The hosted databases listed below provide a supported version. If you run your own MongoDB server, check its version before updating Nightscout.
 ```
 
 </br>

@@ -68,6 +68,14 @@ If you want to change selections, you need to click again `SHOW` to update the v
 
 </br>
 
+Since Nightscout 15.0.9, an event with a duration (like a temporary target or a profile switch) is drawn on every day it covers, not only on the day it started.
+
+```{note}
+In Nightscout 15.0.9, a temporary target that was cancelled early is still drawn for its full planned length.
+```
+
+</br>
+
 If you select `Insulin distribution` you will get a short report.
 
 Note: You need `Basal rate` enabled to see bolus vs basal information.
@@ -101,7 +109,7 @@ This report will give you a daily distribution view.
 Since 15.0.8, the table also shows an estimated A1c for each day, computed from the day's average glucose, in both DCCT (%) and IFCC (mmol/mol) units. Like the A1c shown in the [Distribution](#distribution) report, it is only a rough estimate and does not replace laboratory testing.
 
 ```{note}
-In Nightscout 15.0.8, the Daily stats estimated A1c is wrong when glucose is displayed in mg/dL (for example `95.8%` instead of `6.9%`). This is [fixed](https://github.com/nightscout/cgm-remote-monitor/pull/8602) in the next release. The value shown in mmol/L is correct.
+In Nightscout 15.0.8, the Daily stats estimated A1c is wrong when glucose is displayed in mg/dL (for example `95.8%` instead of `6.9%`). This is [fixed](https://github.com/nightscout/cgm-remote-monitor/pull/8602) in Nightscout 15.0.9: update your site if you see such values. The value shown in mmol/L is correct.
 ```
 
 </br>
@@ -172,9 +180,13 @@ This will give you a table of your calibrations, if your uploader sends the corr
 
 ## Treatments
 
-This will give you a table of your treatments, day by day.
+This will give you a table of your treatments, day by day. Since Nightscout 15.0.9, you can filter the table by event type.
 
 <img src="/nightscout/img/Reports15.png" width="800px" />
+
+```{note}
+In Nightscout 15.0.9, after you edit a treatment the table keeps showing the old row until you click `Show` again.
+```
 
 </br>
 
@@ -183,6 +195,10 @@ This will give you a table of your treatments, day by day.
 This report will display [profiles](/nightscout/profile_editor.md) used in the time range.
 
 <img src="/nightscout/img/Reports17.png" width="800px" />
+
+```{note}
+In Nightscout 15.0.9, when several profiles were saved on the last day of the range, some of them can be missing from the report. Extend the range by one day to see them.
+```
 
 </br>
 

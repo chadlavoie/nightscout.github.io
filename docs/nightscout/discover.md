@@ -15,7 +15,7 @@ It should look very similar to this when your [uploader](/uploader/setup.md) has
 
 </br>
 
-The central part will show your recent BG, you can select how many hours you want to be displayed with `Hours: 2 3 4 6 12 24`.  The pale blue dots are the AR2 prevision as explained [here](/nightscout/setup_variables.md#ar2-ar2-forecasting). The lower part will display the last 48 hours and you can use the lower right selection to browse your old data.
+The central part will show your recent BG, you can select how many hours you want to be displayed with `Hours: 2 3 4 6 12 24 48` (`48` since Nightscout 15.0.9).  The pale blue dots are the AR2 prevision as explained [here](/nightscout/setup_variables.md#ar2-ar2-forecasting). The lower part will display the last 48 hours and you can use the lower right selection to browse your old data.
 
 <img src="/nightscout/img/UseNS01.png" width="600px" />
 
@@ -162,6 +162,8 @@ If you have more than one profile stored, you can switch profile to keep your pr
 For a temporary switch (like for physical activities) you can select the duration.
 
 <img src="/nightscout/img/UseNS16.png" width="500px" />
+
+Since Nightscout 15.0.9, when AAPS sends a percentage or time-shifted profile switch, the basal, ISF and carb ratio shown on the site are the scaled values AAPS uses. During a percentage switch the basal pill shows ISF and carb ratio unrounded.
 
 </br>
 

@@ -53,7 +53,7 @@ This guide documents a proven working configuration for running Nightscout with 
 | Docker Compose version | Use version 3.3 with `mem_limit` instead of `deploy`   |
 
 ```{warning}
-MongoDB 3.6 is below the version officially supported by Nightscout: 15.0.8 and later require MongoDB 5.0 or later, and MongoDB 5.0 requires a CPU with AVX. This guide is a community workaround for NAS models without AVX and may stop working with a future Nightscout release. If your NAS supports AVX, use MongoDB 5.0 or 6.0 instead.
+MongoDB 3.6 is below the version officially supported by Nightscout: Nightscout supports MongoDB 5.0 or later (4.4 is deprecated and will stop being supported in a future release), and MongoDB 5.0 requires a CPU with AVX. This guide is a community workaround for NAS models without AVX and may stop working with a future Nightscout release. If your NAS supports AVX, use MongoDB 5.0 or 6.0 instead.
 ```
 
 **Critical Discovery:**
@@ -131,6 +131,9 @@ services:
 
 # Required for local network access
       INSECURE_USE_HTTP: "true"
+
+# Nightscout 15.0.9 and later: trust the DSM reverse proxy (section 8) for the visitor's address
+      TRUST_PROXY: "1"
 
     ports:
       - "1337:1337"
@@ -410,6 +413,8 @@ docker-compose down && docker-compose up -d
 3. Custom Header -> Create -> WebSocket
 
 4. Save
+
+5. Keep `TRUST_PROXY: "1"` in the Nightscout environment (see the compose file above): since Nightscout 15.0.9 this tells Nightscout to take the visitor's address from the DSM reverse proxy. Set it to `"false"` if you don't use the reverse proxy.
 
 #### SSL Certificate
 
